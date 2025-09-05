@@ -1,0 +1,271 @@
+{
+  "name": "Sub-SectorsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "toolDescription": "Get subsectors from sectors app api",
+        "url": "https://api.sectors.app/v1/subsectors",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        832,
+        656
+      ],
+      "id": "6ca50330-10dc-4b3e-8c89-42f1df1e3cc1",
+      "name": "GetSubSectors",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ts0HEDXmLwxQ3QwF",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.sectors.app/v1/companies",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Name', ``, 'string') }}",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', ``, 'string') }}"
+            },
+            {
+              "name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters1_Name', ``, 'string') }}",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters1_Value', ``, 'string') }}"
+            },
+            {
+              "name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Name', ``, 'string') }}",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1008,
+        624
+      ],
+      "id": "8176c53f-b2f8-49dc-b5a7-1b2f7ca321e7",
+      "name": "GetCompanies",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ts0HEDXmLwxQ3QwF",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        640,
+        640
+      ],
+      "id": "a9752b5e-455e-4f69-a688-7b763cb2cd7e",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "K79HkkfIPqn0Is1J",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "query"
+            }
+          ]
+        }
+      },
+      "id": "796d5006-ea20-4a03-b808-6020bb0e61b8",
+      "typeVersion": 1.1,
+      "name": "Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        304,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "## Overview\nYou have access to the Sectors App API companies list endpoint through an HTTP request tool. This endpoint allows you to filter and analyze companies by subsector or sub-industry with sorting capabilities on various financial metrics.\n\n## About Sectors App\nSectors is an Indonesian Financial Data Platform providing real-time and accurate financial data to almost all Indonesian company listed in IDX.\n\n## Available Tools\nYou have access to two tools:\n1. **GetSubsector**: Returns list of all available subsectors from Sectors API\n2. **GetCompanies**: Makes the companies list API call\n3. **GetSubSectorReport**: Return report of a given subsector, organized into distinct sections\n4. **GetCompanyQuarterlyFinancials**: Return quarterly financials of a given company\n\n## When to Use This Endpoint\nUse this endpoint when users ask about:\n- Companies in specific sectors or industries\n- Company rankings by financial metrics\n- Comparative analysis within industries\n- Investment opportunities in particular sectors\n- Market leaders in specific business areas\n- Report of a given subsector, organized into distinct sections\n\n## Workflow: Subsector Validation Process\n\n### ALWAYS Follow This 2-Step Process:\n\n#### Step 1: Validate Subsector Name\n**Before making any companies list API call, ALWAYS use the GetSubsector tool first to:**\n- Get the complete list of available subsectors\n- Verify the exact spelling and formatting required\n- Find the closest match to user's request if needed\n\n#### Step 2: Make Companies List API Call\nOnly after confirming the correct subsector name, proceed with the HTTP request.\n\n### Subsector Validation Examples:\n\n**User asks: \"Show me banking companies\"**\n1. ✅ First: Use GetSubsector tool\n2. ✅ Find: \"banks\" (not \"banking\")\n3. ✅ Then: Make API call with `sub_sector=banks`\n\n**User asks: \"Technology companies\"**\n1. ✅ First: Use GetSubsector tool  \n2. ✅ Check available options (might be \"software\", \"hardware\", etc.)\n3. ✅ Ask user for clarification or choose most relevant\n4. ✅ Then: Make API call with correct parameter\n\n### Handling Subsector Mismatches:\n\n**If user's requested subsector doesn't exist:**\n- Show available subsectors from GetSubsector response\n- Suggest the closest alternatives\n- Ask user to choose or proceed with your best match\n- Explain why you're suggesting specific alternatives\n\n**Example response for mismatch:**\n```\nI checked the available subsectors and \"technology\" isn't a direct match. However, I found these related options:\n- \"software\" - for software companies\n- \"semiconductors\" - for chip manufacturers  \n- \"telecommunications\" - for telecom companies\n\nWhich would you prefer, or would you like me to analyze software companies as the closest match?\n```\n\n## HTTP Request Configuration\n\n### Base URL\n```\nGET https://api.sectors.app/v1/companies/\nGET https://api.sectors.app/v1/subsector/report/{sub_sector}/\nGET https://api.sectors.app/v1/financials/quarterly/{ticker}/\n\n```\n\n### Required Headers\n```\nAuthorization: <API_KEY>\n```\n\n### Dynamic Path Parameters for GetSubSectorReport\n- `sub_sector`: Use for broader sector filtering (e.g., \"banks\", \"financing-service\", \"insurance\", \"retailing\", \"tobacco\")\n\n### Dynamic Path Parameters for GetCompanyQuarterlyFinancials\n- `ticker`: Use for company ticker filtering (e.g., \"BBRI\", \"GOTO\", \"TLKM\"). Get the available ticker from the **GetCompanies** endpoint.\n\n\n### Query Parameters\n**Choose ONE filter (never use both):**\n- `sub_sector`: Use for broader sector filtering (e.g., \"banks\", \"financing-service\", \"insurance\", \"retailing\", \"tobacco\")\n- `sub_industry`: Use for more specific industry filtering (e.g., \"paper\", \"life-insurance\", \"personal-care-products\", \"software\", \"gold\")\n- `sections` : Use for more specific sections filtering (e.g., \"statistics\", \"market_cap\", \"stability\", \"valuation\", \"growth\", \"companies\", \"all\")\n\n**Format requirements:** Always use kebab-case (lowercase, separated by hyphens)\n\n**Optional sorting parameters:**\n- `sort_by`: Choose from `symbol`, `company_name`, `market_cap`, `dividend_yield`, `total_dividend`, `revenue`, `earnings`, `pb`, `pe`, `ps`\n- `desc`: Set to `true` for descending order, `false` for ascending (default: `false`)\n\n### Query Parameters for GetCompanyQuarterlyFinancials\n**Choose ONE filter (never use both):**\n- `report_date`: Use for report date filtering. Type String. The API endpoint only accepts report_date date in the YYYY-MM-DD format.\n- `approx`: boolean. When set to true, the quarterly financials are retrieved based on the closest available report date to the specified report_date. If set to false, only the quarterly financials matching the exact specified report_date will be retrieved.\n- `n_quarters`: integer. The number of latest consecutive quarters for which financial data should be retrieved. When this parameter is provided, it overrides report_date and approx, returning financial data for the most recent n_quarters available.\n\n### Example Request Structure\n```\nGET https://api.sectors.app/v1/companies/?sub_sector=banks&sort_by=market_cap&desc=true\nGET https://api.sectors.app/v1/subsector/report/healthcare-equipment-providers/?sections=all\nGET https://api.sectors.app/v1/financials/quarterly/bbri/?approx=true\n```\n\n## Response Analysis Guidelines\n\n### 1. Data Interpretation\nWhen you receive the response:\n- **DO NOT** return raw JSON data to users\n- Analyze the data for meaningful insights\n- Identify top performers, trends, and notable patterns\n- Compare metrics across companies where relevant\n\n### 2. Key Metrics to Focus On\n- **Market Cap**: Company size and market value\n- **P/E Ratio**: Valuation relative to earnings\n- **P/B Ratio**: Valuation relative to book value\n- **Dividend Yield**: Income potential for investors\n- **Revenue & Earnings**: Financial performance indicators\n\n### 3. Insight Categories to Provide\n\n**Market Leaders:**\n- Identify companies with highest market caps\n- Note dominant players in the sector/industry\n\n**Valuation Analysis:**\n- Compare P/E and P/B ratios to identify potentially undervalued/overvalued stocks\n- Highlight companies with attractive valuations\n\n**Income Opportunities:**\n- Point out high dividend-yielding companies\n- Analyze dividend sustainability based on other metrics\n\n**Growth Potential:**\n- Identify companies with strong revenue/earnings growth\n- Note emerging players vs established leaders\n\n### 4. Response Format\n\n**Always structure your response with:**\n\n1. **Executive Summary** (2-3 sentences)\n   - Key findings from the data\n   - Most important insights for investors\n\n2. **Top Companies** (3-5 companies if not specified by the user)\n   - Brief analysis of market leaders\n   - Why they stand out\n\n3. **Investment Insights**\n   - Valuation observations\n   - Risk/opportunity highlights\n   - Sector-specific considerations\n\n4. **Notable Mentions**\n   - Interesting outliers or emerging companies\n   - Unique characteristics worth noting\n\n### 5. Example Response Structure\n```\nBased on the banking sector analysis:\n\n**Executive Summary:**\nThe banking sector shows [key insight about valuations/performance]. Market leaders like [Company A] dominate with $X billion market cap, while [trend observation] across the sector.\n\n**Top Market Leaders:**\n1. [Company Name] - $X billion market cap, P/E of Y, notable for [specific strength]\n2. [Company Name] - Strong dividend yield of X%, indicating [analysis]\n3. [Company Name] - Trading at attractive P/B ratio of X, suggesting [insight]\n\n**Investment Insights:**\n- Valuation: [Analysis of sector valuations compared to historical norms]\n- Income: [Dividend yield analysis and sustainability]\n- Risk Factors: [Sector-specific considerations]\n\n**Notable Mentions:**\n[Highlight 1-2 interesting smaller companies or unusual metrics]\n```\n\n## Error Handling & Edge Cases\n\n### GetSubsector Tool Issues:\n**If GetSubsector tool fails:**\n- Inform user that subsector validation is temporarily unavailable\n- Proceed with commonly known subsectors (banks, insurance, retailing) if confident\n- Suggest user try again later for verification\n\n**If subsector not found in GetSubsector response:**\n- List 3-5 closest alternative subsectors\n- Explain the difference between alternatives\n- Let user choose or proceed with your recommended match\n\n### If API Returns Limited Data:\n- Provide a summary of available information\n- Explain limitations clearly\n- Suggest alternative approaches or related sectors to explore\n\n### If No Companies Match Criteria:\n- Double-check subsector name was validated correctly\n- Suggest similar or related sectors from GetSubsector results\n- Provide general market context\n\n### If Companies List Request Fails:\n- Verify subsector name matches exactly what GetSubsector returned\n- Check if the API key is properly configured\n- Inform user of technical issues and suggest retry\n\n## Best Practices\n\n1. **ALWAYS validate subsectors first** - Use GetSubsector tool before every companies list API call\n2. **Always contextualize data** - Don't just list numbers, explain what they mean\n3. **Compare relatively** - Show how companies rank against peers\n4. **Consider market conditions** - Factor in current market environment when relevant\n5. **Highlight actionable insights** - Focus on information useful for investment decisions\n6. **Keep responses concise but comprehensive** - Balance detail with readability\n7. **Handle ambiguity gracefully** - When multiple subsectors could match user's request, offer choices\n\n## Sample User Queries & Complete Workflow\n\n**\"Show me the top software companies\"**\n1. ✅ Use GetSubsector tool to confirm \"software\" is available\n2. ✅ Use `sub_industry=software`, sort by `market_cap`, desc=true\n3. ✅ Analyze and provide insights\n\n**\"Which banks pay the best dividends?\"**\n1. ✅ Use GetSubsector tool to verify \"banks\" subsector exists\n2. ✅ Use `sub_sector=banks`, sort by `dividend_yield`, desc=true\n3. ✅ Focus analysis on dividend sustainability and yields\n\n**\"Find undervalued insurance companies\"**\n1. ✅ Use GetSubsector tool to confirm \"insurance\" is correct\n2. ✅ Use `sub_sector=insurance`, sort by `pb` or `pe`, desc=false\n3. ✅ Analyze for low ratios and value opportunities\n\n**\"Show me tech companies\" (ambiguous request)**\n1. ✅ Use GetSubsector tool to see available options\n2. ✅ Present options: \"software\", \"semiconductors\", etc.\n3. ✅ Ask user to clarify or proceed with most relevant match\n4. ✅ Make API call and analyze results\n\nRemember: Your goal is to transform raw financial data into actionable investment insights that help users make informed decisions."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        704,
+        416
+      ],
+      "id": "cb107018-f897-4eb7-930d-7176d2c4f521",
+      "name": "Agent-SectorsApp"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Get subsectors from sectors app api",
+        "url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', ``, 'string') }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1168,
+        576
+      ],
+      "id": "32ba533f-0d66-43e4-b6ae-fa95c98faa46",
+      "name": "GetSubSectorsReport",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ts0HEDXmLwxQ3QwF",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Return quarterly financials metrics of a given ticker",
+        "url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', ``, 'string') }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1248,
+        688
+      ],
+      "id": "f3e6b061-a006-4204-8d5a-dfe26c8eccd2",
+      "name": "GetCompanyQuarterlyFinancials",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ts0HEDXmLwxQ3QwF",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "GetSubSectors": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent-SectorsApp",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetCompanies": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent-SectorsApp",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agent-SectorsApp",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Agent-SectorsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetSubSectorsReport": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent-SectorsApp",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetCompanyQuarterlyFinancials": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent-SectorsApp",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "95c8f1b8-b7a1-44ad-94fa-ba0bc51d067d",
+  "meta": {
+    "instanceId": "a7b791b7da220fb23693c1e4b82f9f8e97f7917c7d3d0049f3e52cb8cb2c26d1"
+  },
+  "id": "TzzgJfnDp733BmYa",
+  "tags": []
+}
